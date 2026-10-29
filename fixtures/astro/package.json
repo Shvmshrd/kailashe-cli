@@ -1,0 +1,1 @@
+{"name":"astro-site","version":"0.1.0","type":"module","scripts":{"build":"astro build","preview":"astro preview"},"dependencies":{"astro":"^4.16.0"}}

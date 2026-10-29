@@ -1,0 +1,51 @@
+{
+  "appType": {
+    "value": "vite-spa",
+    "source": "package.json",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "vite@5.4.0",
+    "source": "package.json",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "build-dir",
+    "source": "package.json scripts.build",
+    "confidence": "high"
+  },
+  "ports": {
+    "value": [
+      5173
+    ],
+    "source": "framework-default",
+    "confidence": "medium"
+  },
+  "buildCommand": {
+    "value": "npm run build",
+    "source": "package.json scripts.build",
+    "confidence": "high"
+  },
+  "startCommand": {
+    "value": "npm run preview",
+    "source": "package.json scripts.preview",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [],
+    "source": "no .env.example or code env references found",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [],
+    "source": "manifest and code scan (no resource hints)",
+    "confidence": "medium"
+  },
+  "rendering": {
+    "value": "static",
+    "source": "package.json",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

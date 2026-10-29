@@ -1,0 +1,81 @@
+id: fly
+name: Fly.io
+cliBinary: flyctl
+install:
+  - os: linux
+    command: "curl -L https://fly.io/install.sh | sh"
+    sourceUrl: "https://fly.io/docs/flyctl/install/"
+    notes: "Official flyctl install script."
+  - os: macos
+    command: "brew install flyctl"
+    sourceUrl: "https://fly.io/docs/flyctl/install/"
+    notes: "Official docs also offer the install script on the same page."
+  - os: windows
+    command: 'pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"'
+    sourceUrl: "https://fly.io/docs/flyctl/install/"
+    notes: "Official flyctl PowerShell install."
+login:
+  command: "flyctl auth login"
+  docsUrl: "https://fly.io/docs/flyctl/auth-login/"
+  helpText: "Complete the browser flow flyctl opens; Kailashe never reads the token it stores."
+verify:
+  command: "flyctl auth whoami"
+  expectedExitCode: 0
+docsDomains:
+  - fly.io
+allowedPatterns:
+  - pattern: "flyctl --version"
+    class: read
+  - pattern: "fly --version"
+    class: read
+  - pattern: "flyctl auth login"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "flyctl auth whoami"
+    class: read
+    notes: "Verify step."
+  - pattern: "flyctl apps list"
+    class: read
+  - pattern: "flyctl apps create"
+    class: create
+  - pattern: "flyctl apps destroy"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "flyctl launch"
+    class: create
+  - pattern: "flyctl deploy"
+    class: create
+    notes: "Plan approval required."
+  - pattern: "flyctl status"
+    class: read
+  - pattern: "flyctl logs"
+    class: read
+  - pattern: "flyctl scale count"
+    class: modify
+  - pattern: "flyctl scale vm"
+    class: modify
+  - pattern: "flyctl volumes list"
+    class: read
+  - pattern: "flyctl volumes create"
+    class: create
+  - pattern: "flyctl volumes destroy"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "flyctl postgres list"
+    class: read
+  - pattern: "flyctl postgres create"
+    class: create
+  - pattern: "flyctl postgres destroy"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "flyctl secrets set"
+    class: iam-billing-network
+    notes: "Secret values go to Fly via flyctl only; never logged by Kailashe."
+  - pattern: "flyctl secrets list"
+    class: read
+    notes: "Names/digests only."
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

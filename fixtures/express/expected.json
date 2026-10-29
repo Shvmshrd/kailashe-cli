@@ -1,0 +1,61 @@
+{
+  "appType": {
+    "value": "express",
+    "source": "package.json",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "express@4.19.2",
+    "source": "package.json",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "package.json (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      3000
+    ],
+    "source": "src/index.js",
+    "confidence": "high"
+  },
+  "buildCommand": {
+    "value": null,
+    "source": "package.json (no build script)",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "npm start",
+    "source": "package.json scripts.start",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [
+      "DATABASE_URL"
+    ],
+    "source": "code scan",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "database",
+        "detail": "via env var DATABASE_URL",
+        "envVars": [
+          "DATABASE_URL"
+        ]
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "package.json",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

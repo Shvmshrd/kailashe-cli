@@ -1,6 +1,8 @@
 ﻿node_modules
 .env
+.claude/
 .kailashe/
 dist
 *.tgz
 coverage
+*.tsbuildinfo

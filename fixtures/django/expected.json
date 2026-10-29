@@ -1,0 +1,64 @@
+{
+  "appType": {
+    "value": "django",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "django",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "requirements.txt (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      8000
+    ],
+    "source": "framework-default",
+    "confidence": "medium"
+  },
+  "buildCommand": {
+    "value": "pip install -r requirements.txt",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "python manage.py runserver",
+    "source": "manage.py",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [
+      "DATABASE_URL",
+      "SECRET_KEY"
+    ],
+    "source": ".env.example",
+    "confidence": "high"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "database",
+        "detail": "via env var DATABASE_URL",
+        "envVars": [
+          "DATABASE_URL"
+        ]
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "notes": [
+    "has manage.py"
+  ],
+  "questions": []
+}

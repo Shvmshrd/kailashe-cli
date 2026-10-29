@@ -1,0 +1,74 @@
+{
+  "appType": {
+    "value": "rails",
+    "source": "Gemfile",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "rails",
+    "source": "Gemfile",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "Gemfile (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      3000
+    ],
+    "source": "framework-default",
+    "confidence": "medium"
+  },
+  "buildCommand": {
+    "value": "bundle install",
+    "source": "Gemfile",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "bundle exec rails server",
+    "source": "Gemfile",
+    "confidence": "medium"
+  },
+  "envVars": {
+    "value": [
+      "DATABASE_URL",
+      "REDIS_URL"
+    ],
+    "source": ".env.example",
+    "confidence": "high"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "cache",
+        "detail": "via env var REDIS_URL",
+        "envVars": [
+          "REDIS_URL"
+        ]
+      },
+      {
+        "type": "database",
+        "detail": "via env var DATABASE_URL",
+        "envVars": [
+          "DATABASE_URL"
+        ]
+      },
+      {
+        "type": "queue",
+        "detail": "via dependency sidekiq",
+        "envVars": []
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "Gemfile",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

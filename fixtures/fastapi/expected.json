@@ -1,0 +1,69 @@
+{
+  "appType": {
+    "value": "fastapi",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "fastapi",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "requirements.txt (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      8000
+    ],
+    "source": "framework-default",
+    "confidence": "medium"
+  },
+  "buildCommand": {
+    "value": "pip install -r requirements.txt",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "uvicorn main:app",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [
+      "DATABASE_URL",
+      "REDIS_URL"
+    ],
+    "source": "code scan",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "cache",
+        "detail": "via env var REDIS_URL",
+        "envVars": [
+          "REDIS_URL"
+        ]
+      },
+      {
+        "type": "database",
+        "detail": "via env var DATABASE_URL",
+        "envVars": [
+          "DATABASE_URL"
+        ]
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

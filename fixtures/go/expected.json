@@ -1,0 +1,61 @@
+{
+  "appType": {
+    "value": "go",
+    "source": "go.mod",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "go",
+    "source": "go.mod",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "go.mod (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      8080
+    ],
+    "source": "main.go",
+    "confidence": "high"
+  },
+  "buildCommand": {
+    "value": "go build ./...",
+    "source": "go.mod",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "go run .",
+    "source": "go.mod",
+    "confidence": "medium"
+  },
+  "envVars": {
+    "value": [
+      "DATABASE_URL"
+    ],
+    "source": "code scan",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "database",
+        "detail": "via env var DATABASE_URL",
+        "envVars": [
+          "DATABASE_URL"
+        ]
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "go.mod",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

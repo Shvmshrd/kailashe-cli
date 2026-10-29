@@ -1,0 +1,81 @@
+id: cloudflare
+name: Cloudflare
+cliBinary: wrangler
+install:
+  - os: linux
+    command: "npm i -g wrangler"
+    sourceUrl: "https://developers.cloudflare.com/workers/wrangler/install-and-update/"
+    notes: "Official Wrangler install (requires Node.js/npm)."
+  - os: macos
+    command: "npm i -g wrangler"
+    sourceUrl: "https://developers.cloudflare.com/workers/wrangler/install-and-update/"
+    notes: "Official Wrangler install (requires Node.js/npm)."
+  - os: windows
+    command: "npm i -g wrangler"
+    sourceUrl: "https://developers.cloudflare.com/workers/wrangler/install-and-update/"
+    notes: "Official Wrangler install (requires Node.js/npm)."
+login:
+  command: "wrangler login"
+  docsUrl: "https://developers.cloudflare.com/workers/wrangler/commands/workers/#login"
+  helpText: "Complete the OAuth flow wrangler opens in the browser; Kailashe never reads the token it stores."
+verify:
+  command: "wrangler whoami"
+  expectedExitCode: 0
+docsDomains:
+  - developers.cloudflare.com
+allowedPatterns:
+  - pattern: "wrangler --version"
+    class: read
+  - pattern: "wrangler login"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "wrangler whoami"
+    class: read
+    notes: "Verify step."
+  - pattern: "wrangler pages deployment list"
+    class: read
+  - pattern: "wrangler pages deploy"
+    class: create
+    notes: "Cloudflare Pages static/SSR deploy; plan approval required."
+  - pattern: "wrangler deploy"
+    class: create
+    notes: "Workers deploy; plan approval required."
+  - pattern: "wrangler deployments list"
+    class: read
+  - pattern: "wrangler tail"
+    class: read
+  - pattern: "wrangler delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "wrangler d1 list"
+    class: read
+  - pattern: "wrangler d1 create"
+    class: create
+  - pattern: "wrangler d1 delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "wrangler kv namespace list"
+    class: read
+  - pattern: "wrangler kv namespace create"
+    class: create
+  - pattern: "wrangler kv namespace delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "wrangler r2 bucket list"
+    class: read
+  - pattern: "wrangler r2 bucket create"
+    class: create
+  - pattern: "wrangler r2 bucket delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "wrangler secret put"
+    class: iam-billing-network
+    notes: "Secret values go to Cloudflare via wrangler only; never logged by Kailashe."
+  - pattern: "wrangler secret list"
+    class: read
+    notes: "Names only."
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

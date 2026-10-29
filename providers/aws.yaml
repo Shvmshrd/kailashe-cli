@@ -1,0 +1,112 @@
+id: aws
+name: Amazon Web Services
+cliBinary: aws
+install:
+  - os: linux
+    command: 'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && sudo ./aws/install'
+    sourceUrl: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
+    notes: "AWS CLI v2 official Linux (x86_64) install. For ARM use awscli-exe-linux-aarch64.zip per the same page."
+  - os: macos
+    command: 'curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg" && sudo installer -pkg AWSCLIV2.pkg -target /'
+    sourceUrl: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
+    notes: "AWS CLI v2 official macOS PKG install."
+  - os: windows
+    command: "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi"
+    sourceUrl: "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
+    notes: "AWS CLI v2 official Windows MSI install (run from an elevated prompt if required)."
+login:
+  command: "aws configure sso"
+  docsUrl: "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html"
+  helpText: "Follow the browser SSO flow AWS opens; Kailashe never reads the token it stores."
+verify:
+  command: "aws sts get-caller-identity"
+  expectedExitCode: 0
+docsDomains:
+  - docs.aws.amazon.com
+allowedPatterns:
+  - pattern: "aws --version"
+    class: read
+  - pattern: "aws configure sso"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "aws sso login"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "aws sts get-caller-identity"
+    class: read
+    notes: "Verify step (SPEC F2a)."
+  - pattern: "aws ecr describe-repositories"
+    class: read
+  - pattern: "aws ecr describe-images"
+    class: read
+  - pattern: "aws ecr create-repository"
+    class: create
+    notes: "Tagged kailashe-project={{projectId}}."
+  - pattern: "aws ecr get-login-password"
+    class: iam-billing-network
+    notes: "Output is a credential: piped by the runner directly to the registry login stdin, redacted everywhere, never logged, never sent to the model."
+  - pattern: "aws ecr delete-repository"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "aws ecs describe-express-gateway-service"
+    class: read
+  - pattern: "aws ecs describe-express-services"
+    class: read
+  - pattern: "aws ecs describe-services"
+    class: read
+  - pattern: "aws ecs describe-tasks"
+    class: read
+  - pattern: "aws ecs create-express-gateway-service"
+    class: create
+    notes: "ECS Express Mode only (SPEC F2a). Exact verb re-verified against AWS docs in S5."
+  - pattern: "aws ecs update-express-gateway-service"
+    class: modify
+    notes: "ECS Express Mode only. Exact verb re-verified against AWS docs in S5."
+  - pattern: "aws ecs delete-express-gateway-service"
+    class: delete
+    notes: "Teardown only. Exact verb re-verified against AWS docs in S5."
+  - pattern: "aws lightsail get-container-services"
+    class: read
+  - pattern: "aws lightsail get-container-service-deployments"
+    class: read
+  - pattern: "aws lightsail create-container-service"
+    class: create
+  - pattern: "aws lightsail push-container-image"
+    class: create
+  - pattern: "aws lightsail create-container-service-deployment"
+    class: create
+  - pattern: "aws lightsail delete-container-service"
+    class: delete
+    notes: "Teardown only."
+  - pattern: "aws iam get-role"
+    class: read
+  - pattern: "aws iam list-roles"
+    class: read
+  - pattern: "aws iam list-attached-role-policies"
+    class: read
+  - pattern: "aws iam create-role"
+    class: iam-billing-network
+    notes: "Always ask, per call."
+  - pattern: "aws iam create-policy"
+    class: iam-billing-network
+    notes: "Always ask, per call."
+  - pattern: "aws iam attach-role-policy"
+    class: iam-billing-network
+    notes: "Always ask, per call."
+  - pattern: "aws iam put-role-policy"
+    class: iam-billing-network
+    notes: "Always ask, per call."
+  - pattern: "aws iam pass-role"
+    class: iam-billing-network
+    notes: "Always ask, per call."
+  - pattern: "aws logs describe-log-groups"
+    class: read
+  - pattern: "aws logs get-log-events"
+    class: read
+  - pattern: "aws logs filter-log-events"
+    class: read
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

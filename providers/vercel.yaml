@@ -1,0 +1,74 @@
+id: vercel
+name: Vercel
+cliBinary: vercel
+install:
+  - os: linux
+    command: "npm i -g vercel"
+    sourceUrl: "https://vercel.com/docs/cli"
+    notes: "Official Vercel CLI install (requires Node.js/npm)."
+  - os: macos
+    command: "npm i -g vercel"
+    sourceUrl: "https://vercel.com/docs/cli"
+    notes: "Official Vercel CLI install (requires Node.js/npm)."
+  - os: windows
+    command: "npm i -g vercel"
+    sourceUrl: "https://vercel.com/docs/cli"
+    notes: "Official Vercel CLI install (requires Node.js/npm)."
+login:
+  command: "vercel login"
+  docsUrl: "https://vercel.com/docs/cli/login"
+  helpText: "Complete the browser/email flow vercel opens; Kailashe never reads the token it stores."
+verify:
+  command: "vercel whoami"
+  expectedExitCode: 0
+docsDomains:
+  - vercel.com
+allowedPatterns:
+  - pattern: "vercel --version"
+    class: read
+  - pattern: "vercel login"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "vercel whoami"
+    class: read
+    notes: "Verify step."
+  - pattern: "vercel list"
+    class: read
+  - pattern: "vercel ls"
+    class: read
+  - pattern: "vercel inspect"
+    class: read
+  - pattern: "vercel logs"
+    class: read
+  - pattern: "vercel projects list"
+    class: read
+  - pattern: "vercel deploy"
+    class: create
+    notes: "Create/modify a deployment; plan approval required."
+  - pattern: "vercel promote"
+    class: modify
+  - pattern: "vercel rollback"
+    class: modify
+  - pattern: "vercel remove"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "vercel rm"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "vercel env ls"
+    class: read
+    notes: "Names only; values are never printed by Kailashe."
+  - pattern: "vercel env add"
+    class: modify
+  - pattern: "vercel env rm"
+    class: delete
+  - pattern: "vercel domains list"
+    class: read
+  - pattern: "vercel domains add"
+    class: iam-billing-network
+    notes: "Network/billing-adjacent; always ask."
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

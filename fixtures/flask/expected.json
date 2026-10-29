@@ -1,0 +1,61 @@
+{
+  "appType": {
+    "value": "flask",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "framework": {
+    "value": "flask",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "artifactKind": {
+    "value": "repo",
+    "source": "requirements.txt (no Dockerfile)",
+    "confidence": "medium"
+  },
+  "ports": {
+    "value": [
+      5000
+    ],
+    "source": "app.py",
+    "confidence": "high"
+  },
+  "buildCommand": {
+    "value": "pip install -r requirements.txt",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "startCommand": {
+    "value": "flask run",
+    "source": "requirements.txt",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [
+      "REDIS_URL"
+    ],
+    "source": "code scan",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [
+      {
+        "type": "cache",
+        "detail": "via env var REDIS_URL",
+        "envVars": [
+          "REDIS_URL"
+        ]
+      }
+    ],
+    "source": "env var names, dependencies",
+    "confidence": "high"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "requirements.txt",
+    "confidence": "medium"
+  },
+  "notes": [],
+  "questions": []
+}

@@ -27,6 +27,8 @@ Owners (SPEC Q12; names filled in by the owner): Agent engineer — S0, S1, S4, 
 
 Parallel after S0+S1 freeze contracts: S2 ∥ (S3→S4→S5) ∥ (S7∥S8) ∥ (S9∥S10). One agent owns one package directory; contract changes in one reviewed PR.
 
+**Status 2026-10-29: S0–S14 implemented, S15 spec-only — 535 tests green (build/typecheck/lint/test). See PROGRESS.md for slice reports. Open: G1–G4 human review, S9c Q7 license check, S5 AWS-verb live re-verification, E2E (never in CI).**
+
 ---
 
 ## S0 — Foundations

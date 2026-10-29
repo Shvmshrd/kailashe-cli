@@ -1,0 +1,66 @@
+{
+  "appType": {
+    "value": "unknown",
+    "source": "no recognised manifest",
+    "confidence": "low"
+  },
+  "framework": {
+    "value": null,
+    "source": "no recognised manifest",
+    "confidence": "low"
+  },
+  "artifactKind": {
+    "value": "image",
+    "source": "Dockerfile",
+    "confidence": "high"
+  },
+  "ports": {
+    "value": [
+      8080
+    ],
+    "source": "Dockerfile",
+    "confidence": "high"
+  },
+  "buildCommand": {
+    "value": null,
+    "source": "Dockerfile (no build command)",
+    "confidence": "low"
+  },
+  "startCommand": {
+    "value": "node server.js",
+    "source": "Dockerfile CMD",
+    "confidence": "high"
+  },
+  "envVars": {
+    "value": [],
+    "source": "no .env.example or code env references found",
+    "confidence": "medium"
+  },
+  "resourceHints": {
+    "value": [],
+    "source": "manifest and code scan (no resource hints)",
+    "confidence": "medium"
+  },
+  "rendering": {
+    "value": "dynamic",
+    "source": "Dockerfile",
+    "confidence": "medium"
+  },
+  "notes": [
+    "has Dockerfile"
+  ],
+  "questions": [
+    {
+      "field": "appType",
+      "question": "Could not confidently determine the app type; what framework/runtime is this project?"
+    },
+    {
+      "field": "framework",
+      "question": "Could not confidently determine the framework; which framework (if any) does this project use?"
+    },
+    {
+      "field": "buildCommand",
+      "question": "Could not confidently determine the build command; how is this project built?"
+    }
+  ]
+}

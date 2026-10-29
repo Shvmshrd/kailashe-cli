@@ -1,0 +1,72 @@
+id: digitalocean
+name: DigitalOcean
+cliBinary: doctl
+install:
+  - os: linux
+    command: "snap install doctl"
+    sourceUrl: "https://docs.digitalocean.com/reference/doctl/how-to/install/"
+    notes: "Official docs also list a release-tarball install from github.com/digitalocean/doctl/releases on the same page."
+  - os: macos
+    command: "brew install doctl"
+    sourceUrl: "https://docs.digitalocean.com/reference/doctl/how-to/install/"
+  - os: windows
+    command: "choco install doctl"
+    sourceUrl: "https://docs.digitalocean.com/reference/doctl/how-to/install/"
+    notes: "Alternatively download the official release zip from github.com/digitalocean/doctl/releases per the same page and add doctl.exe to PATH."
+login:
+  command: "doctl auth init"
+  docsUrl: "https://docs.digitalocean.com/reference/doctl/reference/auth/init/"
+  helpText: "Paste the API token at doctl's own prompt; Kailashe never sees or stores it."
+verify:
+  command: "doctl account get"
+  expectedExitCode: 0
+docsDomains:
+  - docs.digitalocean.com
+allowedPatterns:
+  - pattern: "doctl --version"
+    class: read
+  - pattern: "doctl version"
+    class: read
+  - pattern: "doctl auth init"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "doctl account get"
+    class: read
+    notes: "Verify step."
+  - pattern: "doctl apps list"
+    class: read
+  - pattern: "doctl apps get"
+    class: read
+  - pattern: "doctl apps create"
+    class: create
+  - pattern: "doctl apps update"
+    class: modify
+  - pattern: "doctl apps delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "doctl apps logs"
+    class: read
+  - pattern: "doctl registry login"
+    class: iam-billing-network
+    notes: "Registry auth handled by doctl's own store."
+  - pattern: "doctl registry repository list-v2"
+    class: read
+  - pattern: "doctl databases list"
+    class: read
+  - pattern: "doctl databases create"
+    class: create
+  - pattern: "doctl databases delete"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "doctl compute droplet list"
+    class: read
+  - pattern: "doctl compute droplet create"
+    class: create
+  - pattern: "doctl compute droplet delete"
+    class: delete
+    notes: "Teardown only, approval required."
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

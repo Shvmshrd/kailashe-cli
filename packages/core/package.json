@@ -1,0 +1,55 @@
+{
+  "name": "@kailashe/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kailashe core — schemas, runner, LLM client",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./exit-codes": { "types": "./dist/exit-codes.d.ts", "default": "./dist/exit-codes.js" },
+    "./exit-codes.js": { "types": "./dist/exit-codes.d.ts", "default": "./dist/exit-codes.js" },
+    "./llm": { "types": "./dist/llm/index.d.ts", "default": "./dist/llm/index.js" },
+    "./llm.js": { "types": "./dist/llm/index.d.ts", "default": "./dist/llm/index.js" },
+    "./llm/index": { "types": "./dist/llm/index.d.ts", "default": "./dist/llm/index.js" },
+    "./llm/index.js": { "types": "./dist/llm/index.d.ts", "default": "./dist/llm/index.js" },
+    "./llm/*.js": { "types": "./dist/llm/*.d.ts", "default": "./dist/llm/*.js" },
+    "./llm/*": { "types": "./dist/llm/*.d.ts", "default": "./dist/llm/*.js" },
+    "./schemas": { "types": "./dist/schemas/index.d.ts", "default": "./dist/schemas/index.js" },
+    "./schemas.js": { "types": "./dist/schemas/index.d.ts", "default": "./dist/schemas/index.js" },
+    "./schemas/index": { "types": "./dist/schemas/index.d.ts", "default": "./dist/schemas/index.js" },
+    "./schemas/index.js": { "types": "./dist/schemas/index.d.ts", "default": "./dist/schemas/index.js" },
+    "./schemas/*.js": { "types": "./dist/schemas/*.d.ts", "default": "./dist/schemas/*.js" },
+    "./schemas/*": { "types": "./dist/schemas/*.d.ts", "default": "./dist/schemas/*.js" },
+    "./runner": { "types": "./dist/runner/index.d.ts", "default": "./dist/runner/index.js" },
+    "./runner.js": { "types": "./dist/runner/index.d.ts", "default": "./dist/runner/index.js" },
+    "./runner/index": { "types": "./dist/runner/index.d.ts", "default": "./dist/runner/index.js" },
+    "./runner/index.js": { "types": "./dist/runner/index.d.ts", "default": "./dist/runner/index.js" },
+    "./runner/*.js": { "types": "./dist/runner/*.d.ts", "default": "./dist/runner/*.js" },
+    "./runner/*": { "types": "./dist/runner/*.d.ts", "default": "./dist/runner/*.js" }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "execa": "9.5.0",
+    "openai": "4.104.0",
+    "zod": "3.23.8",
+    "zod-to-json-schema": "3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "vitest": "3.1.1",
+    "@types/node": "22.7.4"
+  }
+}
