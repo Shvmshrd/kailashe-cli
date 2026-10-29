@@ -146,6 +146,16 @@ evals detector accuracy 30/30 (100%, threshold 90%).
   Vercel domain, exit 0; `domain custom` → CNAME settings; claim without
   operator DNS env → exit 3, no claim. Real Cloudflare/Vercel DNS writes
   still never made (no accounts) — providers are mocked-fetch tested.
+- **Graphify, live run**: `graphifyy==0.9.97` installed in an isolated
+  temp venv (uv; nothing added to the system or the repo) and run over
+  this repo via the committed `evals/graphify-build.py` (structural AST
+  extraction only — the skill's LLM semantic pass is not replicated):
+  189 code files → 2,350 nodes, 4,008 edges, 146 communities in
+  `graphify-out/graph.json` (1.7 MB, gitignored). `kailashe graph .` reads
+  it back as source "graphify" (100% EXTRACTED relations; top concepts:
+  plan/src/index.ts, cli gate, tenancy.ts, detect.ts). Detector notes for
+  the monorepo root itself: appType "unknown" (workspace root, correct —
+  not a deployable app).
 
 ### Open items for owner (gates, per build prompt)
 - **G1–G4 human reviews** not yet signed off (code complete; review pending).

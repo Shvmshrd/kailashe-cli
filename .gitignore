@@ -3,6 +3,7 @@
 .claude/
 .kailashe/
 dist
+graphify-out/
 *.tgz
 coverage
 *.tsbuildinfo
