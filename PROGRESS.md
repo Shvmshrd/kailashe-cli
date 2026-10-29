@@ -91,6 +91,62 @@ evals detector accuracy 30/30 (100%, threshold 90%).
   handshake ok. No real provider accounts used; deploys remain
   plan-approved through the runner.
 
+### Addendum 2026-10-29 — Tenant subdomains (kailashe.tech), Graphify, hosting flow
+
+- **Flow** (owner-directed): Kailashe reads the project first (detector +
+  project graph), then: if the project fits Vercel, Vercel is offered and a
+  Vercel deploy **uses the Vercel domain itself — the domain step is
+  skipped**. Otherwise the user picks a host (Workers/Modal/Fly/…, logging in
+  with that provider's own CLI; Kailashe never takes provider credentials)
+  and only then is asked "Do you have a domain?": yes → printed DNS settings
+  (apex + www CNAMEs); no → pick a label, e.g. `zi1`, and
+  `zi1.kailashe.tech` is claimed: CNAME to the deployed host, HTTPS on.
+  Labels are globally unique, claimable once ever (tombstone keeps them
+  bound to the first owner after release), one active label per user.
+- **deploy/tenancy.ts**: platform domain `KAILASHE_PLATFORM_DOMAIN` (default
+  `kailashe.tech`), label validation + reserved list, `TenantRegistry`
+  (in-memory + file `.kailashe/tenants.json`, tmp+rename, corrupt file
+  refuses), DNS providers behind one interface: `CloudflareDnsProvider`
+  (proxied CNAME, Universal SSL), new `VercelDnsProvider` (Vercel DNS,
+  automatic TLS; no update endpoint → delete+recreate), `FakeDnsProvider`.
+  Claim happens before DNS writes; DNS failure rolls the claim back.
+  Tokens come only from env and never appear in errors/logs. CLI refuses to
+  claim (exit 3, nothing recorded) when tenant DNS is not configured.
+- **deploy/hosting-flow.ts**: `assessVercelFit` (native frameworks +
+  static eligible; container images, GPU, Python servers, long-running
+  servers blocked with reasons; database stays an external-DB note) and
+  `resolveHostingFlow` composing offer-vercel → use-provider-domain
+  (Vercel) → ask-domain → custom settings / claim-subdomain / needs-label.
+- **Graphify integration** (owner-directed; Graphify-Labs/graphify):
+  research found PyPI `graphifyy` 0.9.97, Apache-2.0, Python ≥3.10, and —
+  decisive — **no non-interactive build subcommand**: graphs are built by
+  its assistant skill (`/graphify .`) into `graphify-out/graph.json`
+  (NetworkX node-link). So Graphify is an **optional user-installed
+  external tool** (same trust model as provider CLIs), NOT a Kailashe
+  dependency: `packages/scan/src/graphify.ts` only reads that file
+  (tolerant Zod at the boundary; corrupt file = loud error), summarizes it
+  (god nodes, file types, EXTRACTED share), and prints the pinned setup
+  commands (`pipx install graphifyy==0.9.97`). `packages/scan/src/graph.ts`
+  is the built-in fallback graph (files/dirs/packages/import edges,
+  deterministic, bounded, reads import specifiers only). Dependency
+  justification per AGENTS.md: license Apache-2.0 (permissive), actively
+  released (0.9.x), heavy Python/tree-sitter footprint — hence optional and
+  never bundled or auto-installed. `skill/` pack unchanged (follow-up task
+  if the operator flow should name Graphify explicitly).
+- **CLI**: new `kailashe graph [dir] [--json]` (profile + graph + Vercel
+  fit + next step) and `kailashe domain setup|check|custom|release`
+  (`setup` asks "Do you have a domain?" interactively on a TTY;
+  `--provider vercel` skips the domain step). CLI now depends on the
+  workspace packages `@kailashe/deploy` and `@kailashe/scan`;
+  `@kailashe/deploy` gained `main`/`types`/`exports` so it resolves.
+- **Tests**: 609 green (deploy 170 incl. 29 tenancy + 8 hosting-flow; scan
+  92 incl. graph/graphify; cli 71 incl. 11 domain-tenancy + 5 graph).
+  `evals/e2e-local.mjs` extended: 27/27 PASS. Live smokes: `graph` on a
+  Next.js fixture → offer-Vercel; `domain setup --provider vercel` →
+  Vercel domain, exit 0; `domain custom` → CNAME settings; claim without
+  operator DNS env → exit 3, no claim. Real Cloudflare/Vercel DNS writes
+  still never made (no accounts) — providers are mocked-fetch tested.
+
 ### Open items for owner (gates, per build prompt)
 - **G1–G4 human reviews** not yet signed off (code complete; review pending).
 - **S9c Q7**: verify ai-directories / OpenLaunch LICENSEs online; if

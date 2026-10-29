@@ -10,6 +10,24 @@
  */
 
 import { Command } from "commander";
+import * as path from "node:path";
+import { confirm as clackConfirm, text as clackText, isCancel } from "@clack/prompts";
+import {
+  CloudflareDnsProvider,
+  FileTenantRegistry,
+  TenantError,
+  VercelDnsProvider,
+  customDomainSettings,
+  provisionSubdomain,
+  releaseSubdomain,
+  resolvePlatformDomain,
+  validateSubdomainLabel,
+  type CustomDomainSettings,
+  type DnsProvider,
+  type ProvisionSubdomainResult,
+  type TenantRegistry,
+} from "@kailashe/deploy";
+import { ExitCode } from "../exit-codes.js";
 import {
   enableRegistrar,
   formatPriceConfirmation,
@@ -108,6 +126,138 @@ export async function executeDomainRegister(
 }
 
 // ---------------------------------------------------------------------------
+// Tenant subdomains (platform domain, e.g. zi1.kailashe.tech) + custom domains
+// ---------------------------------------------------------------------------
+
+export interface TenancyDeps {
+  registry?: TenantRegistry;
+  dns?: DnsProvider;
+  env?: Record<string, string | undefined>;
+  cwd?: string;
+}
+
+/** Registry persisted under <cwd>/.kailashe/tenants.json (claims survive runs). */
+export function defaultTenantRegistry(cwd: string): TenantRegistry {
+  return new FileTenantRegistry(path.join(cwd, ".kailashe", "tenants.json"));
+}
+
+/**
+ * Real DNS only when the operator has configured tenant DNS for the
+ * platform zone. Cloudflare wins when both are set:
+ *   - CLOUDFLARE_API_TOKEN + CLOUDFLARE_ZONE_ID  -> proxied CNAME + Universal SSL
+ *   - VERCEL_API_TOKEN (+ optional VERCEL_TEAM_ID) -> Vercel DNS + automatic TLS
+ * Tokens are passed to the provider constructors and never logged.
+ * Otherwise null, so the CLI asks for configuration instead of pretending
+ * a record exists.
+ */
+export function dnsProviderFromEnv(env: Record<string, string | undefined>, platformDomain: string): DnsProvider | null {
+  const apiToken = env["CLOUDFLARE_API_TOKEN"];
+  const zoneId = env["CLOUDFLARE_ZONE_ID"];
+  if (apiToken && zoneId) return new CloudflareDnsProvider({ apiToken, zoneId, platformDomain });
+  const vercelToken = env["VERCEL_API_TOKEN"];
+  if (vercelToken) {
+    return new VercelDnsProvider({ apiToken: vercelToken, platformDomain, teamId: env["VERCEL_TEAM_ID"] });
+  }
+  return null;
+}
+
+const TENANT_DNS_NOT_CONFIGURED =
+  "Tenant DNS is not configured: set CLOUDFLARE_API_TOKEN + CLOUDFLARE_ZONE_ID (Cloudflare) " +
+  "or VERCEL_API_TOKEN (Vercel DNS) in the environment";
+
+export function formatCustomDomainSettings(settings: CustomDomainSettings): string[] {
+  const lines = [`Connect ${settings.domain} to your deployed app:`, ""];
+  for (const r of settings.records) {
+    lines.push(`  ${r.type}  ${r.name}  ->  ${r.value}  (proxied: ${r.proxied}, TTL: ${r.ttl})`);
+  }
+  lines.push("");
+  settings.steps.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+  lines.push("", settings.httpsNote);
+  return lines;
+}
+
+export function formatProvisionResult(result: ProvisionSubdomainResult): string[] {
+  return [
+    `Subdomain ready: ${result.url}`,
+    `  ${result.fqdn}  ->  ${result.targetHost} (DNS record ${result.recordId})`,
+    `  HTTPS: ${result.https.enabled ? "on" : "off"} (${result.https.mode}) — ${result.https.note}`,
+  ];
+}
+
+export type DomainSetupResult =
+  | { kind: "custom"; settings: CustomDomainSettings; exitCode: number }
+  | { kind: "platform"; result: ProvisionSubdomainResult; exitCode: number }
+  | { kind: "provider-domain"; providerId: string; url: string; exitCode: number }
+  | { kind: "needs-input"; message: string; exitCode: number }
+  | { kind: "error"; message: string; exitCode: number };
+
+export function formatProviderDomain(result: { providerId: string; url: string }): string[] {
+  return [
+    `Deployed on Vercel: using your Vercel domain ${result.url}`,
+    "No kailashe.tech subdomain is needed for Vercel deploys. To attach your own domain later: Vercel -> Project -> Settings -> Domains.",
+  ];
+}
+
+/**
+ * The `domain setup` decision + action, injectable for tests.
+ * hasOwnDomain=true -> custom-domain settings (no DNS writes by Kailashe).
+ * Otherwise a label is claimed: unique globally, one active label per user.
+ */
+export async function executeDomainSetup(
+  deps: TenancyDeps,
+  input: { userId?: string; targetHost?: string; ownDomain?: string; label?: string; platformDomain?: string; providerId?: string; deployedUrl?: string },
+): Promise<DomainSetupResult> {
+  const env = deps.env ?? process.env;
+  // Vercel deploys use the Vercel domain itself: the whole domain step
+  // (own domain? / kailashe.tech label) is skipped — hosting-flow rule.
+  if (input.providerId === "vercel") {
+    const deployed = input.deployedUrl ?? input.targetHost;
+    if (!deployed) {
+      return {
+        kind: "needs-input",
+        message: "Deployed on Vercel: pass --target <your-app>.vercel.app (the Vercel domain) and Kailashe uses it as-is.",
+        exitCode: ExitCode.NeedsInputOrDenied,
+      };
+    }
+    const host = deployed.trim().replace(/^https?:\/\//i, "").split(/[/?#]/, 1)[0] ?? "";
+    if (!host) {
+      return { kind: "error", message: `Could not parse a host from ${JSON.stringify(deployed)}.`, exitCode: ExitCode.Validation };
+    }
+    return { kind: "provider-domain", providerId: "vercel", url: `https://${host}`, exitCode: ExitCode.Ok };
+  }
+  if (!input.targetHost) return { kind: "needs-input", message: "Pass --target <host> (the host your app was deployed to, e.g. my-app.vercel.app).", exitCode: ExitCode.NeedsInputOrDenied };
+  if (input.ownDomain) {
+    try {
+      const settings = customDomainSettings({ domain: input.ownDomain, targetHost: input.targetHost, platformDomain: input.platformDomain });
+      return { kind: "custom", settings, exitCode: ExitCode.Ok };
+    } catch (err) {
+      return { kind: "error", message: err instanceof Error ? err.message : String(err), exitCode: ExitCode.Validation };
+    }
+  }
+  if (!input.label) return { kind: "needs-input", message: "No domain of your own? Pick a subdomain: pass --label <name> (e.g. --label zi1).", exitCode: ExitCode.NeedsInputOrDenied };
+  if (!input.userId) return { kind: "needs-input", message: "Pass --user <id> so the subdomain is bound to exactly one user.", exitCode: ExitCode.NeedsInputOrDenied };
+  const platformDomain = input.platformDomain ?? resolvePlatformDomain(env);
+  const registry = deps.registry ?? defaultTenantRegistry(deps.cwd ?? process.cwd());
+  const dns = deps.dns ?? dnsProviderFromEnv(env, platformDomain);
+  if (!dns) {
+    return {
+      kind: "needs-input",
+      message:
+        `${TENANT_DNS_NOT_CONFIGURED} ` +
+        `(for the ${platformDomain} zone), then re-run. No claim was made.`,
+      exitCode: ExitCode.NeedsInputOrDenied,
+    };
+  }
+  try {
+    const result = await provisionSubdomain({ userId: input.userId, label: input.label, targetHost: input.targetHost, registry, dns, platformDomain });
+    return { kind: "platform", result, exitCode: ExitCode.Ok };
+  } catch (err) {
+    const code = err instanceof TenantError ? ExitCode.Validation : ExitCode.Unexpected;
+    return { kind: "error", message: err instanceof Error ? err.message : String(err), exitCode: code };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Commander wiring
 // ---------------------------------------------------------------------------
 
@@ -115,6 +265,7 @@ export async function executeDomainRegister(
 export function createDomainCommand(opts?: {
   /** Inject a Registrar factory for --register (tests / wiring). */
   makeRegistrar?: () => Registrar;
+  tenancy?: TenancyDeps;
 }): Command {
   const domainCmd = new Command("domain").description("manage domains");
 
@@ -182,6 +333,114 @@ export function createDomainCommand(opts?: {
         } else {
           process.exitCode = 1;
         }
+      }
+    });
+
+  domainCmd
+    .command("setup")
+    .description("connect a domain to your deployed app: your own domain (settings) or a free <label>.kailashe.tech subdomain")
+    .option("--target <host>", "host your app was deployed to, e.g. my-app.vercel.app")
+    .option("--provider <id>", "provider you deployed to (vercel = use the Vercel domain, skip the domain step)")
+    .option("--user <id>", "user id the subdomain is bound to (one active subdomain per user)")
+    .option("--own-domain <domain>", "you have your own domain: print the DNS settings to connect it")
+    .option("--label <label>", "subdomain label on the platform domain, e.g. zi1 -> zi1.kailashe.tech")
+    .option("--platform-domain <domain>", "platform domain (default: $KAILASHE_PLATFORM_DOMAIN or kailashe.tech)")
+    .option("--json", "emit a single JSON result object")
+    .action(async (flags: { target?: string; provider?: string; user?: string; ownDomain?: string; label?: string; platformDomain?: string; json?: boolean }) => {
+      let { ownDomain, label } = flags;
+      // Interactive ask-flow only on a real terminal, and only when the
+      // caller did not already answer with flags. Vercel deploys skip the
+      // domain question entirely (they use the Vercel domain).
+      if (!ownDomain && !label && flags.provider !== "vercel" && process.stdin.isTTY) {
+        const hasOwn = await clackConfirm({ message: "Do you have a domain?" });
+        if (isCancel(hasOwn)) { process.exitCode = ExitCode.NeedsInputOrDenied; return; }
+        if (hasOwn) {
+          const d = await clackText({ message: "Your domain (e.g. example.com):" });
+          if (isCancel(d)) { process.exitCode = ExitCode.NeedsInputOrDenied; return; }
+          ownDomain = String(d);
+        } else {
+          const l = await clackText({ message: "Pick a subdomain label (e.g. zi1):" });
+          if (isCancel(l)) { process.exitCode = ExitCode.NeedsInputOrDenied; return; }
+          label = String(l);
+        }
+      }
+      const outcome = await executeDomainSetup(opts?.tenancy ?? {}, {
+        userId: flags.user, targetHost: flags.target, ownDomain, label, platformDomain: flags.platformDomain, providerId: flags.provider,
+      });
+      process.exitCode = outcome.exitCode;
+      if (flags.json) {
+        console.log(JSON.stringify(outcome.kind === "platform" ? { kind: outcome.kind, ...outcome.result } : outcome));
+        return;
+      }
+      if (outcome.kind === "custom") for (const line of formatCustomDomainSettings(outcome.settings)) console.log(line);
+      else if (outcome.kind === "platform") for (const line of formatProvisionResult(outcome.result)) console.log(line);
+      else if (outcome.kind === "provider-domain") for (const line of formatProviderDomain(outcome)) console.log(line);
+      else console.error(outcome.message);
+    });
+
+  domainCmd
+    .command("check")
+    .description("check whether a subdomain label is still available")
+    .argument("<label>", "subdomain label, e.g. zi1")
+    .option("--platform-domain <domain>", "platform domain (default: $KAILASHE_PLATFORM_DOMAIN or kailashe.tech)")
+    .option("--json", "emit a single JSON result object")
+    .action((label: string, flags: { platformDomain?: string; json?: boolean }) => {
+      const checked = validateSubdomainLabel(label);
+      if (!checked.ok) {
+        console.error(`Invalid label: ${checked.reason}`);
+        process.exitCode = ExitCode.Validation;
+        return;
+      }
+      const platformDomain = flags.platformDomain ?? resolvePlatformDomain();
+      const registry = opts?.tenancy?.registry ?? defaultTenantRegistry(opts?.tenancy?.cwd ?? process.cwd());
+      const existing = registry.getByLabel(checked.label);
+      const available = !existing;
+      const fqdn = `${checked.label}.${platformDomain}`;
+      if (flags.json) console.log(JSON.stringify({ label: checked.label, fqdn, available, status: existing?.status ?? null }));
+      else console.log(available ? `${fqdn} is available` : `${fqdn} is taken (${existing!.status}, owner ${existing!.userId}) — each subdomain can be used only once`);
+      process.exitCode = ExitCode.Ok;
+    });
+
+  domainCmd
+    .command("custom")
+    .description("show the DNS settings to connect your own domain to your deployed app")
+    .argument("<domain>", "your domain, e.g. example.com")
+    .requiredOption("--target <host>", "host your app was deployed to, e.g. my-app.vercel.app")
+    .option("--json", "emit a single JSON result object")
+    .action((domain: string, flags: { target: string; json?: boolean }) => {
+      try {
+        const settings = customDomainSettings({ domain, targetHost: flags.target });
+        if (flags.json) console.log(JSON.stringify(settings));
+        else for (const line of formatCustomDomainSettings(settings)) console.log(line);
+        process.exitCode = ExitCode.Ok;
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : String(err));
+        process.exitCode = ExitCode.Validation;
+      }
+    });
+
+  domainCmd
+    .command("release")
+    .description("release your subdomain (the label stays reserved for you and cannot be taken by anyone else)")
+    .argument("<label>", "subdomain label, e.g. zi1")
+    .requiredOption("--user <id>", "user id that owns the subdomain")
+    .option("--platform-domain <domain>", "platform domain (default: $KAILASHE_PLATFORM_DOMAIN or kailashe.tech)")
+    .action(async (label: string, flags: { user: string; platformDomain?: string }) => {
+      const platformDomain = flags.platformDomain ?? resolvePlatformDomain();
+      const registry = opts?.tenancy?.registry ?? defaultTenantRegistry(opts?.tenancy?.cwd ?? process.cwd());
+      const dns = opts?.tenancy?.dns ?? dnsProviderFromEnv(opts?.tenancy?.env ?? process.env, platformDomain);
+      if (!dns) {
+        console.error(`${TENANT_DNS_NOT_CONFIGURED}, then re-run.`);
+        process.exitCode = ExitCode.NeedsInputOrDenied;
+        return;
+      }
+      try {
+        const r = await releaseSubdomain({ userId: flags.user, label, registry, dns });
+        console.log(`Released ${r.fqdn}. The label remains reserved for ${flags.user}.`);
+        process.exitCode = ExitCode.Ok;
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : String(err));
+        process.exitCode = ExitCode.Validation;
       }
     });
 

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "Kailashe deploy — build, registry, domain, CI",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist"],
   "engines": {
     "node": ">=20"
   },

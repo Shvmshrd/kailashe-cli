@@ -6,18 +6,40 @@ Kailashe never handles provider credentials. Deploys run through each provider's
 
 Spec: [docs/SPEC.md](docs/SPEC.md) · Tasks: [TASKS.md](TASKS.md) · Skill pack: [skill/kailashe-operator](skill/kailashe-operator)
 
-## Quickstart — five commands
+## Commands
 
 ```sh
 npx kailashe init          # install the operator skill pack (.agents/skills + .claude/skills)
 npx kailashe doctor        # check node, provider CLIs, env
 npx kailashe validate-pack # validate the skill pack (also runs in CI)
+npx kailashe graph         # read + graph the project, show the first hosting step
 # copy .env.example to .env and set MODEL_API_KEY
 npx kailashe deploy        # detect → choose provider → approve plan → deploy → verify
 npx kailashe operate       # scan → market → plan → prompt.md gate (Execute / Edit / Quit)
 ```
 
 `deploy` always asks which provider to use (it preselects one with a reason; AWS is never preselected), shows an exact plan — resources, commands, monthly cost, rollback — and runs nothing create/modify/delete until you approve.
+
+### How a deploy gets its domain
+
+Kailashe first reads your project (`kailashe graph`) — detector profile plus a project graph. For the richest graph it can read [Graphify](https://github.com/Graphify-Labs/graphify) output (optional, Apache-2.0, user-installed: `pipx install graphifyy==0.9.97`, `graphify install`, then `/graphify .` in Claude Code writes `graphify-out/graph.json`); without it, a built-in graph of files/packages/imports is used.
+
+Then the flow is:
+
+1. **If the project fits Vercel** (Next.js and other SSR/static front ends), Kailashe offers Vercel first. A Vercel deploy **uses the Vercel domain itself** (`*.vercel.app`) — there is no domain step at all.
+2. **Any other host** (Cloudflare Workers, Modal, Fly, DigitalOcean, … — you log in with that provider's own CLI; Kailashe never takes provider credentials): only now does Kailashe ask *"Do you have a domain?"*
+   - **Yes** → Kailashe prints the exact DNS settings (apex + `www` CNAMEs to your deployed host) for you to add at your registrar.
+   - **No** → pick a label, e.g. `zi1`, and Kailashe claims `zi1.kailashe.tech` for you: a CNAME to your deployed host with HTTPS on (Cloudflare-proxied Universal SSL, or Vercel DNS automatic TLS, depending on where the `kailashe.tech` zone is hosted). Every label is **globally unique and can be claimed only once** — it stays bound to its first user even after release, and each user holds one active label at a time.
+
+```sh
+npx kailashe domain setup --provider vercel --target my-app.vercel.app   # Vercel: uses the Vercel domain
+npx kailashe domain setup --label zi1 --target my-app.modal.run --user u1 # claim zi1.kailashe.tech
+npx kailashe domain check zi1                                             # is the label still free?
+npx kailashe domain custom mysite.com --target my-app.modal.run          # your domain: DNS settings
+npx kailashe domain release zi1 --user u1                                 # release (label stays yours)
+```
+
+Tenant DNS writes need operator configuration the user never sees: `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ZONE_ID`, or `VERCEL_API_TOKEN` if the `kailashe.tech` zone uses Vercel DNS. Without them, claims stop with exit 3 and nothing is claimed. `KAILASHE_PLATFORM_DOMAIN` overrides the platform domain (`kailashe.tech`). Claims persist in `.kailashe/tenants.json`.
 
 ## Exit codes
 

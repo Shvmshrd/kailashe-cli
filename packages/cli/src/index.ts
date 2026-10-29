@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import * as path from "node:path";
 import { Command } from "commander";
 import { createDomainCommand } from "./commands/domain.js";
+import { createGraphCommand } from "./commands/graph.js";
 import { createGateCommand } from "./commands/gate.js";
 import { runDoctor } from "./commands/doctor.js";
 import { createInitCommand } from "./commands/init.js";
@@ -60,6 +61,7 @@ export function buildProgram(): Command {
     .version(VERSION, "--version");
 
   program.addCommand(createDomainCommand());
+  program.addCommand(createGraphCommand());
   program.addCommand(createGateCommand());
   program.addCommand(createInitCommand());
 

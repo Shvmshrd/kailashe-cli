@@ -8,3 +8,5 @@ export * from "./screenshot.js";
 export * from "./brief.js";
 export * from "./scanner.js";
 export * from "./detect.js";
+export * from "./graph.js";
+export * from "./graphify.js";

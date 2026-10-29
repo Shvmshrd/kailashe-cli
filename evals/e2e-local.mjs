@@ -4,7 +4,8 @@
  * Exercises built dists: detect -> providers/choice -> plan -> gate -> MCP handlers -> runner allowlist.
  * Run: pnpm build && node evals/e2e-local.mjs
  */
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -17,6 +18,8 @@ const deploy = await import(pathToFileURL(path.join(root, "packages/deploy/dist/
 const plan = await import(pathToFileURL(path.join(root, "packages/plan/dist/index.js")));
 const gate = await import(pathToFileURL(path.join(root, "packages/cli/dist/gate.js")));
 const mcp = await import(pathToFileURL(path.join(root, "packages/mcp/dist/handlers.js")));
+const cliGraph = await import(pathToFileURL(path.join(root, "packages/cli/dist/commands/graph.js"))).catch(() => null);
+const cliDomain = await import(pathToFileURL(path.join(root, "packages/cli/dist/commands/domain.js"))).catch(() => null);
 
 let fails = 0;
 const check = (name, cond, extra = "") => { console.log(`${cond ? "PASS" : "FAIL"}  ${name}${extra ? " — " + extra : ""}`); if (!cond) fails++; };
@@ -58,5 +61,63 @@ const list = await handlers.listProviders({});
 check("mcp list_providers ok", list.status === "ok");
 const dep = await handlers.deploy({ path: ".", provider: "modal" });
 check("mcp deploy without confirm blocked", dep.status === "needs_confirmation");
+
+// 7. Graphify + hosting flow: read project -> graph -> Vercel decision -> domain step
+const tmp = mkdtempSync(path.join(tmpdir(), "kailashe-e2e-"));
+try {
+  const nextDir = path.join(tmp, "next-app");
+  mkdirSync(path.join(nextDir, "app"), { recursive: true });
+  writeFileSync(path.join(nextDir, "package.json"), JSON.stringify({ name: "web", dependencies: { next: "15.0.0", react: "19.0.0" }, scripts: { build: "next build", start: "next start" } }));
+  writeFileSync(path.join(nextDir, "app", "page.tsx"), "export default function Page() { return null; }\n");
+
+  // Built-in graph fallback when no Graphify graph exists.
+  const graph = await scan.buildProjectGraph(nextDir, { appType: "nextjs" });
+  check("builtin graph maps nextjs project", graph.stats.files >= 2 && graph.nodes.some((n) => n.id === "pkg:next"), `${graph.stats.files} files`);
+  check("no graphify graph yet -> null", (await scan.loadGraphifyGraph(nextDir)) === null);
+
+  // A Graphify-built graph is picked up and summarized.
+  mkdirSync(path.join(nextDir, "graphify-out"), { recursive: true });
+  writeFileSync(path.join(nextDir, "graphify-out", "graph.json"), JSON.stringify({
+    directed: false, multigraph: false, graph: {},
+    nodes: [
+      { id: "a", label: "Page", file_type: "code", source_file: "app/page.tsx", community: 0 },
+      { id: "b", label: "Layout", file_type: "code", source_file: "app/layout.tsx", community: 0 },
+    ],
+    links: [{ source: "a", target: "b", relation: "references", confidence: "EXTRACTED" }],
+  }));
+  const gGraph = await scan.loadGraphifyGraph(nextDir);
+  check("graphify graph loads + summarizes", gGraph !== null && scan.summarizeGraphifyGraph(gGraph).godNodes.length === 2);
+
+  // Hosting flow: Next.js fits Vercel -> offered first -> Vercel domain used, domain step skipped.
+  if (cliGraph) {
+    const report = await cliGraph.buildGraphReport(nextDir);
+    check("graph report: graphify source + offer-vercel", report.graphSource === "graphify" && report.nextStep.kind === "offer-vercel", report.profile.appType);
+    const vercelFlow = deploy.resolveHostingFlow({ vercelFit: report.vercelFit, chosenProviderId: "vercel", deployedUrl: "web.vercel.app" });
+    check("vercel deploy -> use vercel domain (no kailashe.tech step)", vercelFlow.kind === "use-provider-domain" && vercelFlow.url === "https://web.vercel.app");
+  } else {
+    check("graph report: graphify source + offer-vercel", false, "cli graph dist missing");
+  }
+
+  // Non-Vercel deploy -> domain step: claim zi1.kailashe.tech exactly once.
+  const registry = new deploy.InMemoryTenantRegistry();
+  const dns = new deploy.FakeDnsProvider();
+  const claimed = await deploy.provisionSubdomain({ userId: "user-a", label: "zi1", targetHost: "zi1-app.modal.run", registry, dns });
+  check("claim zi1 -> https://zi1.kailashe.tech + https", claimed.url === "https://zi1.kailashe.tech" && claimed.https.enabled === true, claimed.https.mode);
+  let duplicateBlocked = false;
+  try {
+    await deploy.provisionSubdomain({ userId: "user-b", label: "zi1", targetHost: "evil.modal.run", registry, dns });
+  } catch { duplicateBlocked = true; }
+  check("zi1 cannot be claimed twice (unique, once)", duplicateBlocked);
+  const ownDomain = deploy.resolveHostingFlow({ vercelFit: deploy.assessVercelFit({ appType: "fastapi", artifactKind: "repo", rendering: "dynamic" }), chosenProviderId: "modal", deployedHost: "zi1-app.modal.run", hasOwnDomain: true, ownDomain: "mysite.com" });
+  check("modal deploy + own domain -> DNS settings", ownDomain.kind === "custom-domain" && ownDomain.settings.records[0].value === "zi1-app.modal.run");
+
+  if (cliDomain) {
+    const dnsSel = cliDomain.dnsProviderFromEnv({ VERCEL_API_TOKEN: "x" }, "kailashe.tech");
+    check("tenant dns: VERCEL_API_TOKEN selects Vercel DNS", dnsSel instanceof deploy.VercelDnsProvider);
+  }
+} finally {
+  rmSync(tmp, { recursive: true, force: true });
+}
+
 console.log(fails ? `\nE2E FAILED (${fails})` : "\nE2E PASSED");
 process.exit(fails ? 1 : 0);

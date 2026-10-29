@@ -30,9 +30,15 @@ importers:
       '@kailashe/core':
         specifier: workspace:*
         version: link:../core
+      '@kailashe/deploy':
+        specifier: workspace:*
+        version: link:../deploy
       '@kailashe/plan':
         specifier: workspace:*
         version: link:../plan
+      '@kailashe/scan':
+        specifier: workspace:*
+        version: link:../scan
       commander:
         specifier: 12.1.0
         version: 12.1.0
