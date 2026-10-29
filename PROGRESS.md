@@ -165,4 +165,27 @@ evals detector accuracy 30/30 (100%, threshold 90%).
   against live AWS docs (offline here; allowlist follows SPEC F2a).
 - **E2E** (`pnpm test:e2e`, `KAILASHE_E2E=1`, real accounts) never run.
 
+### 2026-10-29 — Addendum: static-shell detector fix + Modal CLI machine fix
+
+- **Detector (packages/scan)**: an Express/Fastify server whose entry only
+  mounts the bundler build output (`express.static`, `@fastify/static`,
+  `sendFile`) is now classified `rendering: static` / `artifactKind:
+  build-dir` with an explanatory note, when a bundler config and a build
+  script also exist and no database dependency is present. A real
+  DB-backed or route-only API stays `dynamic`. New unit tests cover both
+  shapes; golden fixtures and the 30-case detector eval unchanged (30/30).
+- **Hosting flow (packages/deploy)**: `assessVercelFit` no longer blocks a
+  long-running app type when rendering is static; it offers Vercel with a
+  note that stateless API routes must be ported to serverless functions
+  and stateful/long-lived work still needs a server host.
+- **Proof on a real project**: `kailashe graph .` on the user's
+  portfolio-website-master now prints "Vercel fit: YES" (was NO —
+  Express false negative). Full gate green: 641 tests across 8 packages,
+  typecheck + lint clean.
+- **Modal CLI (machine, not repo)**: the stale `A:\conda\Scripts\modal.exe`
+  shim (package missing → `ModuleNotFoundError`) was renamed to
+  `modal.exe.stale-backup`; `modal` now resolves to the uv-tool install
+  (`C:\Users\Shivam\.local\bin\modal.exe`, client 1.6.3, `--version`
+  exit 0). Login is still the operator's own step (`modal setup`).
+
 <!-- Slice reports appended per Appendix B after each slice -->

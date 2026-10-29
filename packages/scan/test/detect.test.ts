@@ -72,6 +72,41 @@ describe("injection safety", () => {
   });
 });
 
+describe("static-serving server shell", () => {
+  it("classifies an Express app that only serves a webpack build as static / build-dir", async () => {
+    await writeFile(tmpRoot, "package.json", JSON.stringify({
+      scripts: { build: "webpack --config ./bundler/webpack.prod.js", start: "node server/index.js" },
+      dependencies: { express: "^4.19.2", webpack: "^5.90.0" },
+    }));
+    await writeFile(tmpRoot, "bundler/webpack.prod.js", "module.exports = {};\n");
+    await writeFile(tmpRoot, "src/index.html", "<html><title>site</title></html>\n");
+    await writeFile(tmpRoot, "server/index.js", [
+      'const express = require("express");',
+      "const app = express();",
+      'app.use(express.static("public"));',
+      'app.post("/api/send-email", (req, res) => res.json({ ok: true }));',
+      "app.listen(8080);",
+      "",
+    ].join("\n"));
+    const p = await detectProfile(tmpRoot);
+    expect(p.appType.value).toBe("express");
+    expect(p.rendering.value).toBe("static");
+    expect(p.artifactKind.value).toBe("build-dir");
+    expect(p.notes.join(" ")).toMatch(/express\.static/);
+  });
+
+  it("keeps a real Express API (no static build) dynamic", async () => {
+    await writeFile(tmpRoot, "package.json", JSON.stringify({
+      scripts: { start: "node index.js" },
+      dependencies: { express: "^4.19.2" },
+    }));
+    await writeFile(tmpRoot, "index.js", 'const app = require("express")();\napp.get("/api/users", (req, res) => res.json([]));\napp.listen(3000);\n');
+    const p = await detectProfile(tmpRoot);
+    expect(p.appType.value).toBe("express");
+    expect(p.rendering.value).toBe("dynamic");
+  });
+});
+
 describe("env names only, never values", () => {
   it("parseEnvExampleNames keeps only names", () => {
     expect(parseEnvExampleNames("# c\nDATABASE_URL=postgres://u:secret@h/db\nexport API_KEY=abc123\nEMPTY=\n")).toEqual(["API_KEY", "DATABASE_URL", "EMPTY"]);

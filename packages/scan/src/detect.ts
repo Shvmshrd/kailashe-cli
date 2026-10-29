@@ -251,7 +251,14 @@ interface Facts {
   portSources: string[];
   hasIndexHtml: boolean;
   entryFiles: Set<string>;
+  staticMountFile: string; // entry/server file that mounts the static build ("" = none)
+  hasBundlerConfig: boolean;
 }
+
+/** A Node server entry mounting its own build output (express.static & friends). */
+const STATIC_MOUNT_RE = /express\.static\s*\(|@fastify\/static|fastify\.register\(\s*static|sendFile\s*\(/;
+/** Bundler config filenames (webpack/vite/rollup/parcel), incl. bundler/webpack.prod.js style. */
+const BUNDLER_CONFIG_RE = /(?:^|\/)(?:webpack|vite|rollup|parcel)(?:\.[\w-]+)?\.config\.[cm]?[jt]s$|(?:^|\/)webpack\.[\w-]+\.[cm]?js$/;
 
 function normalisePyDep(line: string): string | null {
   const t = line.trim();
@@ -273,6 +280,7 @@ export async function detectProfile(rootDir: string, options: DetectOptions = {}
     hasDockerfile: false, hasCompose: false, dockerExpose: [], dockerCmd: null, dockerBase: "",
     composePorts: [], composeImages: [], envFromExample: [], envExampleSource: "",
     envFromCode: [], portsFromCode: [], portSources: [], hasIndexHtml: false, entryFiles: new Set(),
+    staticMountFile: "", hasBundlerConfig: false,
   };
 
   // --- package.json ---
@@ -377,6 +385,9 @@ export async function detectProfile(rootDir: string, options: DetectOptions = {}
       const n = Number.parseInt(m[1] ?? "", 10);
       if (Number.isInteger(n) && n >= 1 && n <= 65535) { codePorts.add(n); codePortSources.add(rel(root, file)); }
     }
+    const relFile = rel(root, file);
+    if (!facts.staticMountFile && STATIC_MOUNT_RE.test(content)) facts.staticMountFile = relFile;
+    if (!facts.hasBundlerConfig && BUNDLER_CONFIG_RE.test(relFile)) facts.hasBundlerConfig = true;
   }
   facts.envFromCode = [...envCode].sort();
   facts.portsFromCode = [...codePorts].sort((a, b) => a - b);
@@ -441,8 +452,20 @@ function buildProfile(f: Facts): DetectedProfile {
   else if (f.hasIndexHtml && !f.hasPackageJson) { appType = "static"; framework = null; appSource = "index.html"; frameworkSource = "index.html (no framework)"; }
 
   const isStaticApp = appType === "vite-spa" || appType === "astro" || appType === "static";
+  // Static-shell: a framework server whose entry only mounts the bundler
+  // build output (express.static & friends). The deployable artifact is the
+  // static build, not the server process. Requires all three signals — a
+  // static mount, a bundler config and a build script — and no database
+  // dependency (a DB-backed API is a real server, not a static shell).
+  const isNodeServer = appType === "express" || appType === "fastify";
+  const hasDatabaseDep = [...f.depNames.keys()].some((d) => (DEP_HINTS[d] as string | undefined) === "database");
+  const staticShell =
+    isNodeServer && f.staticMountFile !== "" && f.hasBundlerConfig && Boolean(f.scripts["build"]) && !hasDatabaseDep;
+  if (staticShell) {
+    f.notes.push(`server entry ${f.staticMountFile} mounts the static build (express.static); classified as static output with a thin server shell`);
+  }
   const renderingValue: "static" | "dynamic" =
-    f.dockerBase.includes("nginx") || f.dockerBase.includes("httpd") ? "static" : isStaticApp ? "static" : "dynamic";
+    f.dockerBase.includes("nginx") || f.dockerBase.includes("httpd") ? "static" : isStaticApp || staticShell ? "static" : "dynamic";
 
   // artifact kind
   let artifact: ProfileField<DetectedProfile["artifactKind"]["value"]>;

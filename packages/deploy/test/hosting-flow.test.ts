@@ -27,6 +27,16 @@ describe("assessVercelFit", () => {
     expect(assessVercelFit({ appType: "unknown", artifactKind: "repo", rendering: "dynamic" }).eligible).toBe(false);
   });
 
+  it("treats Node servers that only serve a static build as Vercel-eligible, with a functions caveat", () => {
+    const fit = assessVercelFit({ appType: "express", artifactKind: "build-dir", rendering: "static" });
+    expect(fit.eligible).toBe(true);
+    expect(fit.blockers.join(" ")).not.toMatch(/long-running/);
+    expect(fit.reasons.join(" ")).toMatch(/static/);
+    expect(fit.notes.join(" ")).toMatch(/serverless functions/);
+    // A real dynamic Express API stays blocked.
+    expect(assessVercelFit({ appType: "express", artifactKind: "repo", rendering: "dynamic" }).eligible).toBe(false);
+  });
+
   it("keeps the database external as a note, not a blocker", () => {
     const fit = assessVercelFit({ appType: "nextjs", artifactKind: "repo", rendering: "dynamic", hasDatabase: true });
     expect(fit.eligible).toBe(true);

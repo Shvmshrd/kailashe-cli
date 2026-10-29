@@ -59,7 +59,15 @@ export function assessVercelFit(input: VercelFitInput): VercelFit {
     blockers.push(`This is a Python server app (${input.appType}); Vercel is not its native fit — Modal runs Python functions, APIs and jobs natively.`);
   }
   if (LONG_RUNNING_SERVER_APP_TYPES.has(input.appType)) {
-    blockers.push(`This is a long-running server (${input.appType}); Vercel runs short-lived serverless functions, not a persistent server process.`);
+    if (input.rendering === "static") {
+      // The detector found the "server" only serves a static build output
+      // (express.static & friends): Vercel can host the build itself. Any API
+      // routes are a porting note, not a blocker — unless they were stateful,
+      // which the detector's static classification already ruled out.
+      notes.push("The server entry only serves the static build; any stateless API routes (for example a contact form) must be ported to serverless functions (Vercel Functions) — anything stateful or long-lived (websockets, background jobs) still needs a server host.");
+    } else {
+      blockers.push(`This is a long-running server (${input.appType}); Vercel runs short-lived serverless functions, not a persistent server process.`);
+    }
   }
   if (input.appType === "unknown") {
     blockers.push("The project type could not be determined, so Vercel fit cannot be confirmed automatically.");
