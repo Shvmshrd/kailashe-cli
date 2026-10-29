@@ -25,6 +25,12 @@ export interface ProviderChoiceInput {
   hasDatabase?: boolean;
   /** Provider id the user explicitly named, if any. Naming AWS counts. */
   userNamedProviderId?: string;
+  /** True when the app needs a GPU or is a Python AI/inference workload. */
+  needsGpu?: boolean;
+  /** True for a Python serverless-style app (API, inference, jobs) that fits Modal. */
+  isPythonServerless?: boolean;
+  /** True for a small JS/TS edge app (no database, no long-running server) that fits Workers. */
+  isEdgeSuitable?: boolean;
   /** Ids actually available in the registry; unknown names are not preselected. */
   availableProviderIds?: readonly string[];
 }
@@ -67,6 +73,24 @@ export function chooseProvider(input: ProviderChoiceInput): ProviderChoice {
     };
   }
 
+  if ((input.needsGpu || input.isPythonServerless) && isAvailable("modal")) {
+    return {
+      ...base,
+      preselectedProviderId: "modal",
+      reason:
+        "This is a Python/GPU serverless workload, so Modal is preselected: it runs Python functions, APIs, and GPU inference without servers to manage. Confirmation is still required.",
+    };
+  }
+
+  if (input.isEdgeSuitable && isAvailable("cloudflare-workers")) {
+    return {
+      ...base,
+      preselectedProviderId: "cloudflare-workers",
+      reason:
+        "This is a small edge JS/TS app with no database, so Cloudflare Workers is preselected: it deploys globally at the edge with no origin server. Confirmation is still required.",
+    };
+  }
+
   if (input.hasContainer && input.hasDatabase && isAvailable("digitalocean")) {
     return {
       ...base,
@@ -102,16 +126,25 @@ export function chooseProvider(input: ProviderChoiceInput): ProviderChoice {
   };
 }
 
+const PYTHON_APP_TYPES = new Set(["fastapi", "flask", "django"]);
+const EDGE_APP_TYPES = new Set(["vite-spa", "astro", "hono", "worker"]);
+
 /** Adapter from the S2 Profile shape (every field wrapped in {value,...}). */
 export function choiceInputFromProfile(profile: Profile): ProviderChoiceInput {
   const appType = profile.appType.value;
   const isStatic = profile.rendering.value === "static" || appType === "static";
   const isSsr = !isStatic && (profile.rendering.value === "dynamic" && SSR_APP_TYPES.has(appType));
+  const hasDatabase = profile.resourceHints.value.some((h) => h.type === "database");
+  const envNames = profile.envVars.value ?? [];
+  const needsGpu = envNames.some((n) => /GPU|CUDA|MODEL|INFERENCE/i.test(n)) || /gpu|inference|embedding/i.test(appType);
   return {
     isStatic,
     isSsr: isSsr || undefined,
     hasContainer: profile.artifactKind.value === "image",
-    hasDatabase: profile.resourceHints.value.some((h) => h.type === "database"),
+    hasDatabase,
+    needsGpu: needsGpu || undefined,
+    isPythonServerless: (PYTHON_APP_TYPES.has(appType) && !hasDatabase) || undefined,
+    isEdgeSuitable: (!isStatic && !hasDatabase && EDGE_APP_TYPES.has(appType)) || undefined,
   };
 }
 

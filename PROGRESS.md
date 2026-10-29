@@ -76,8 +76,22 @@ evals detector accuracy 30/30 (100%, threshold 90%).
   Meta terms linked, not paraphrased).
 - **S15** — SPEC §10 only. No code, as specified.
 
-### Open items for owner (gates, per build prompt)
+### Addendum 2026-10-29 — Modal + Cloudflare Workers, E2E run
 
+- New providers: `providers/modal.yaml` (Modal CLI: `modal deploy` create,
+  `modal token new` login, `modal profile current` verify) and
+  `providers/cloudflare-workers.yaml` (Workers-only wrangler patterns,
+  distinct from Pages-focused `cloudflare`). Registry now 7 providers.
+- Choice UX: Python/GPU serverless → Modal preselected; small edge JS/TS
+  (no DB) → Cloudflare Workers preselected; AWS still never preselected.
+- Tests: 549 green (deploy 133, +14). New `evals/e2e-local.mjs` harness
+  (detect → registry/choice → allowlist → plan → gate → MCP handlers):
+  18/18 PASS. Detector evals 30/30. Live smokes: `init` into temp dir
+  (19 written, second run 0), `validate-pack` ok, MCP stdio `initialize`
+  handshake ok. No real provider accounts used; deploys remain
+  plan-approved through the runner.
+
+### Open items for owner (gates, per build prompt)
 - **G1–G4 human reviews** not yet signed off (code complete; review pending).
 - **S9c Q7**: verify ai-directories / OpenLaunch LICENSEs online; if
   permissive, import rows with attribution + `THIRD_PARTY.md`.

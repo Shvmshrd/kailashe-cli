@@ -3,7 +3,7 @@ import { choiceInputFromProfile, chooseProvider, chooseProviderForProfile } from
 import { loadProviders, DEFAULT_PROVIDERS_DIR } from "../src/providers.js";
 import type { Profile } from "@kailashe/core/schemas/profile.js";
 
-const AVAILABLE = ["aws", "cloudflare", "digitalocean", "fly", "vercel"];
+const AVAILABLE = ["aws", "cloudflare", "cloudflare-workers", "digitalocean", "fly", "modal", "vercel"];
 
 describe("chooseProvider matrix (SPEC F2.2 / Q3)", () => {
   it("always asks and always requires confirmation", () => {
@@ -31,6 +31,17 @@ describe("chooseProvider matrix (SPEC F2.2 / Q3)", () => {
     const c = chooseProvider({ hasContainer: true, hasDatabase: true, availableProviderIds: AVAILABLE });
     expect(c.preselectedProviderId).toBe("digitalocean");
     expect(c.reason).toMatch(/container/i);
+  });
+
+  it("Python serverless / GPU -> Modal", () => {
+    expect(chooseProvider({ isPythonServerless: true, availableProviderIds: AVAILABLE }).preselectedProviderId).toBe("modal");
+    expect(chooseProvider({ needsGpu: true, availableProviderIds: AVAILABLE }).preselectedProviderId).toBe("modal");
+  });
+
+  it("edge-suitable JS/TS -> Cloudflare Workers", () => {
+    const c = chooseProvider({ isEdgeSuitable: true, availableProviderIds: AVAILABLE });
+    expect(c.preselectedProviderId).toBe("cloudflare-workers");
+    expect(c.reason).toMatch(/edge/i);
   });
 
   it("container without a database gets no automatic preselection", () => {

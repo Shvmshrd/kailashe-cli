@@ -2,7 +2,7 @@
 
 Open source (MIT) CLI, stdio MCP server, and skill pack that takes an AI-built project from "runs locally" to "live URL" — and then operates it as a side business: market research, an archetype plan, a backlog, a tool manifest, and a composed `prompt.md` for Muse.
 
-Kailashe never handles provider credentials. Deploys run through each provider's own CLI (AWS, DigitalOcean, Vercel, Cloudflare, Fly) on your own logged-in account, behind an allowlisted, redacting, audit-logged runner. See [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
+Kailashe never handles provider credentials. Deploys run through each provider's own CLI (AWS, DigitalOcean, Vercel, Cloudflare Pages, Cloudflare Workers, Fly, Modal) on your own logged-in account, behind an allowlisted, redacting, audit-logged runner. See [SECURITY.md](SECURITY.md) and [PRIVACY.md](PRIVACY.md).
 
 Spec: [docs/SPEC.md](docs/SPEC.md) · Tasks: [TASKS.md](TASKS.md) · Skill pack: [skill/kailashe-operator](skill/kailashe-operator)
 

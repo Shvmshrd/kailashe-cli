@@ -13,7 +13,7 @@ import {
   type ProviderFs,
 } from "../src/providers.js";
 
-const EXPECTED_IDS = ["aws", "cloudflare", "digitalocean", "fly", "vercel"];
+const EXPECTED_IDS = ["aws", "cloudflare", "cloudflare-workers", "digitalocean", "fly", "modal", "vercel"];
 
 function fakeFs(files: Record<string, string>): ProviderFs {
   return {
@@ -100,7 +100,9 @@ describe("real providers/*.yaml registry", () => {
       digitalocean: ["docs.digitalocean.com"],
       vercel: ["vercel.com"],
       cloudflare: ["developers.cloudflare.com"],
+      "cloudflare-workers": ["developers.cloudflare.com"],
       fly: ["fly.io"],
+      modal: ["modal.com"],
     };
     for (const p of providers) {
       for (const entry of p.install) {

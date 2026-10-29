@@ -1,0 +1,68 @@
+id: modal
+name: Modal
+cliBinary: modal
+install:
+  - os: linux
+    command: "python -m pip install modal"
+    sourceUrl: "https://modal.com/docs/guide/getting-started"
+    notes: "Official Modal Python client and CLI for serverless Python and GPU workloads (requires Python/pip)."
+  - os: macos
+    command: "python -m pip install modal"
+    sourceUrl: "https://modal.com/docs/guide/getting-started"
+    notes: "Official Modal Python client and CLI for serverless Python and GPU workloads (requires Python/pip)."
+  - os: windows
+    command: "python -m pip install modal"
+    sourceUrl: "https://modal.com/docs/guide/getting-started"
+    notes: "Official Modal Python client and CLI for serverless Python and GPU workloads (requires Python/pip)."
+login:
+  command: "modal token new"
+  docsUrl: "https://modal.com/docs/guide/getting-started"
+  helpText: "Complete the browser token flow modal opens; Kailashe never reads the token it stores."
+verify:
+  command: "modal profile current"
+  expectedExitCode: 0
+docsDomains:
+  - modal.com
+allowedPatterns:
+  - pattern: "modal --version"
+    class: read
+  - pattern: "modal token new"
+    class: iam-billing-network
+    notes: "Login only, run with inherited stdio."
+  - pattern: "modal profile current"
+    class: read
+    notes: "Verify step."
+  - pattern: "modal profile list"
+    class: read
+  - pattern: "modal deploy"
+    class: create
+    notes: "Deploy a Modal app; plan approval required."
+  - pattern: "modal serve"
+    class: modify
+  - pattern: "modal run"
+    class: create
+  - pattern: "modal app list"
+    class: read
+  - pattern: "modal app logs"
+    class: read
+  - pattern: "modal app stop"
+    class: delete
+    notes: "Teardown only, approval required."
+  - pattern: "modal secret list"
+    class: read
+    notes: "Names only."
+  - pattern: "modal secret create"
+    class: iam-billing-network
+    notes: "Secret values go to Modal via the modal CLI only; never logged by Kailashe."
+  - pattern: "modal volume ls"
+    class: read
+  - pattern: "modal volume create"
+    class: create
+  - pattern: "modal volume delete"
+    class: delete
+    notes: "Teardown only, approval required."
+health:
+  path: "/"
+  timeoutMs: 15000
+tagging:
+  key: kailashe-project

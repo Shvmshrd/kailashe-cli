@@ -1,6 +1,9 @@
 export * from "./image-build.js";
 export * from "./registrar.js";
 export * from "./ci-workflow.js";
+export * from "./providers.js";
+export * from "./choice.js";
+export * from "./bootstrap.js";
 export * from "./agent/index.js";
 // The image-build module and the agent tools both define a `Runner`
 // abstraction (image-build uses { bin }, the agent uses { binary }).
