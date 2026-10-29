@@ -1,0 +1,260 @@
+# Connector registry: which route to use for which business capability.
+# Kailashe reads this to build the tool manifest and the setup checklist inside prompt.md.
+# Meta publishes no connector list. The list inside the Muse app is the truth.
+# Statuses here come from a community tracker (last full check below) plus vendor docs. Re-verify often. PRs welcome.
+version: 1
+verified: "2026-10-13"
+status_values:
+  live: built into Muse
+  custom: create a custom connector in Muse (API key or remote MCP)
+  hub: reach through a hub (Zapier, Composio, Activepieces, n8n)
+  browser: Muse Secure VM browser, owner logs in where needed
+  manual: the owner does it, you prepare everything
+approval_classes:
+  A: auto (read, research, drafts to HQ, PRs opened)
+  B: batch approval (merges, directory batches, scheduled posts, opted-in newsletters)
+  C: ask each time (first posts, new recipients, spend, DNS or deploy, deletes, new scopes)
+
+hubs:
+  zapier:
+    kind: muse-builtin
+    reach: 9,000+ apps, only actions the owner approves in Zapier's MCP settings
+    setup: Muse Settings, Connectors, Zapier. Then approve apps and actions in Zapier.
+    auth: zapier-account
+    license: closed, per-task pricing
+  composio:
+    kind: custom-connector
+    url: https://connect.composio.dev/mcp
+    reach: 1,500+ apps through Tool Router (search, connect, execute)
+    auth: api-key
+    cautions: [session URLs can embed credentials, treat as secrets]
+    license: hosted service
+  activepieces:
+    kind: custom-connector
+    url_cloud: https://mcp.activepieces.com/mcp
+    url_self_hosted: https://<host>/mcp
+    reach: 760+ pieces, flows, tables
+    auth: oauth
+    license: MIT core, self-hostable
+  n8n:
+    kind: custom-connector
+    url_self_hosted: https://<host>/mcp-server/http
+    reach: workflows the owner enables, build and edit on recent versions
+    auth: [oauth, access-token]
+    license: Sustainable Use (fair-code, not OSI)
+  direct-api:
+    kind: custom-connector
+    setup: Ask Muse to create a custom connector from the service's API docs. Keys go in through the credential prompt.
+    cautions: [Meta does not review custom connectors, use the narrowest key scopes]
+  browser:
+    kind: muse-builtin
+    setup: Muse Secure VM browser. Owner logs in where needed. Stop at captchas.
+
+capabilities:
+  docs.hq:
+    purpose: Project HQ pages and sheets
+    routes:
+      - {via: muse, tool: notion, status: live, class: A}
+      - {via: muse, tool: google-docs-and-sheets, status: live, class: A}
+    verify: create and read back a test page, then delete it with the owner's OK
+
+  tasks.board:
+    purpose: Backlog board outside HQ, optional
+    routes:
+      - {via: muse, tool: asana, status: live, class: A}
+      - {via: muse, tool: linear, status: live, class: A}
+      - {via: muse, tool: todoist, status: live, class: A}
+
+  chat.notify:
+    purpose: Alerts and approvals to the owner
+    routes:
+      - {via: muse, tool: slack, status: live, class: A}
+      - {via: muse, tool: gmail, status: live, class: C}
+
+  code.pr:
+    purpose: Open pull requests for content and SEO fixes
+    routes:
+      - {via: muse, tool: github, status: live, class: A, note: opening a PR is A, merging is B}
+    verify: read the repo tree
+
+  code.deploy_status:
+    purpose: Check deploys and logs after merges
+    routes:
+      - {via: muse, tool: vercel, status: live, class: A}
+      - {via: muse, tool: railway, status: live, class: A}
+      - {via: github-actions-status, status: live, class: A, note: for clouds deployed with the Kailashe CLI}
+
+  research.web:
+    purpose: Search and read pages
+    routes:
+      - {via: muse, tool: web-search-and-browser, status: live, class: A}
+
+  seo.trends:
+    purpose: Google Trends interest, rising queries, regions
+    routes:
+      - {via: custom, tool: google-trends-api-alpha, status: custom, class: A, note: needs alpha access}
+      - {via: custom, tool: dataforseo-google-trends-explore, status: custom, class: A, note: pay per call}
+      - {via: custom, tool: serpapi-google-trends, status: custom, class: A}
+      - {via: browser, tool: trends-website, status: browser, class: A, note: spot checks only}
+
+  seo.keywords:
+    purpose: Volume, difficulty, related keywords, questions
+    routes:
+      - {via: custom, tool: semrush-official-mcp, status: custom, class: A, note: needs a Semrush plan, see vendor docs for the URL}
+      - {via: custom, tool: ahrefs-official-mcp, status: custom, class: A, note: needs an Ahrefs plan, see vendor docs for the URL}
+      - {via: custom, tool: dataforseo, status: custom, class: A, note: pay as you go}
+      - {via: custom, tool: se-ranking-mcp, status: custom, class: A}
+
+  seo.serp:
+    purpose: Read top results, features, People Also Ask
+    routes:
+      - {via: muse, tool: web-search-and-browser, status: live, class: A}
+      - {via: custom, tool: dataforseo-serp, status: custom, class: A}
+
+  seo.search_console:
+    purpose: Queries, impressions, clicks, positions, indexing
+    routes:
+      - {via: composio, tool: google-search-console, status: hub, class: A, note: confirm the toolkit exists on the owner's plan}
+      - {via: custom, tool: search-console-api, status: custom, class: A, note: community recipes exist for a custom connector}
+      - {via: manual, tool: search-console-ui, status: manual, class: A, note: owner exports CSV into the sheet}
+
+  seo.audit:
+    purpose: Technical and on-page checks
+    routes:
+      - {via: muse, tool: browser-and-lighthouse-via-site, status: browser, class: A}
+      - {via: composio-or-custom, tool: site-audit-api, status: hub, class: A}
+
+  content.publish_repo:
+    purpose: Publish content by pull request
+    routes:
+      - {via: muse, tool: github, status: live, class: B}
+
+  content.cms:
+    purpose: Publish drafts to a CMS
+    routes:
+      - {via: composio, tool: wordpress-ghost-webflow-sanity, status: hub, class: B, note: drafts only, owner presses publish}
+      - {via: zapier, tool: cms-actions, status: hub, class: B}
+
+  directories.submit:
+    purpose: Submit to directories and listing sites
+    routes:
+      - {via: browser, tool: directory-forms, status: browser, class: B}
+      - {via: muse, tool: gmail, status: live, class: A, note: click verification emails}
+      - {via: muse, tool: google-sheets, status: live, class: A, note: Directory tracker}
+
+  social.meta_apps:
+    purpose: Facebook, Instagram, Threads
+    routes:
+      - {via: muse, tool: meta-accounts, status: live, class: C, note: posting support varies, verify in the app}
+      - {via: muse, tool: meta-business-manager, status: live, class: A, note: analytics and ad account reads}
+
+  social.x:
+    purpose: Posts and replies on X
+    routes:
+      - {via: composio, tool: twitter-x, status: hub, class: C}
+      - {via: zapier, tool: x-actions, status: hub, class: C}
+      - {via: custom, tool: x-api, status: custom, class: C, note: API access terms and fees apply}
+      - {via: manual, tool: owner-posts, status: manual, class: C}
+
+  social.linkedin:
+    purpose: Posts on LinkedIn
+    routes:
+      - {via: custom, tool: community-linkedin-publisher, status: custom, class: C, note: reports say text posts only}
+      - {via: composio, tool: linkedin, status: hub, class: C}
+      - {via: zapier, tool: linkedin-actions, status: hub, class: C}
+      - {via: manual, tool: owner-posts, status: manual, class: C}
+
+  social.reddit:
+    purpose: Read threads, prepare replies, post with approval
+    routes:
+      - {via: browser, tool: reddit-read, status: browser, class: A, note: reading only}
+      - {via: composio, tool: reddit, status: hub, class: C}
+      - {via: custom, tool: reddit-api, status: custom, class: C, note: API terms apply, check community rules per subreddit}
+      - {via: manual, tool: owner-posts, status: manual, class: C}
+
+  social.hacker_news:
+    purpose: Show HN and comments
+    routes:
+      - {via: browser, tool: news-ycombinator-website, status: browser, class: C, note: the official API is read-only, posting happens on the website}
+      - {via: manual, tool: owner-posts, status: manual, class: C, note: preferred}
+
+  social.scheduler:
+    purpose: Schedule approved posts
+    routes:
+      - {via: zapier, tool: buffer-or-similar, status: hub, class: B}
+      - {via: composio, tool: buffer-or-similar, status: hub, class: B}
+      - {via: custom, tool: postiz-api, status: custom, class: B, note: open source, self-hostable}
+
+  social.video:
+    purpose: Short video and YouTube
+    routes:
+      - {via: composio, tool: youtube, status: hub, class: C}
+      - {via: manual, tool: owner-uploads, status: manual, class: C, note: you prepare scripts, titles, descriptions, thumbnails}
+
+  email.campaigns:
+    purpose: Newsletters, sequences, lifecycle email
+    routes:
+      - {via: muse, tool: klaviyo, status: live, class: B}
+      - {via: composio, tool: mailchimp-convertkit-beehiiv, status: hub, class: B}
+      - {via: custom, tool: listmonk-api, status: custom, class: B, note: open source, self-hostable}
+
+  email.inbox:
+    purpose: Triage, drafts, one-to-one outreach
+    routes:
+      - {via: muse, tool: gmail, status: live, class: C}
+      - {via: muse, tool: outlook, status: live, class: C}
+
+  outreach.crm:
+    purpose: Targets, contacts, status
+    routes:
+      - {via: muse, tool: google-sheets, status: live, class: A, note: Outreach CRM sheet}
+      - {via: muse, tool: highlevel, status: live, class: B}
+      - {via: composio, tool: hubspot-pipedrive, status: hub, class: B}
+
+  design.assets:
+    purpose: Social graphics, OG images, listing images
+    routes:
+      - {via: muse, tool: canva, status: live, class: A}
+      - {via: muse, tool: figma, status: live, class: A}
+
+  payments.stripe:
+    purpose: Payment events, products, links
+    routes:
+      - {via: muse, tool: stripe, status: live, class: C, note: read is A, creating or changing prices is C}
+
+  accounting:
+    purpose: Invoices, expenses
+    routes:
+      - {via: muse, tool: quickbooks, status: live, class: C}
+
+  scheduling:
+    purpose: Booking links, calendar
+    routes:
+      - {via: muse, tool: google-calendar, status: live, class: B}
+      - {via: muse, tool: calendly, status: live, class: B}
+
+  analytics.web:
+    purpose: Traffic, conversions, funnels
+    routes:
+      - {via: composio, tool: google-analytics, status: hub, class: A}
+      - {via: custom, tool: plausible-umami-posthog-api, status: custom, class: A}
+      - {via: manual, tool: owner-exports-csv, status: manual, class: A}
+
+  reviews.monitor:
+    purpose: Read reviews and mentions
+    routes:
+      - {via: browser, tool: review-sites-read, status: browser, class: A}
+      - {via: activepieces-or-n8n, tool: mentions-watch flow, status: hub, class: A}
+
+  flows.build:
+    purpose: Build recurring automations
+    routes:
+      - {via: activepieces, tool: flow-building-mcp, status: custom, class: B, note: MIT, self-hostable}
+      - {via: n8n, tool: workflow-mcp, status: custom, class: B, note: needs a recent version for build and edit}
+      - {via: zapier, tool: zaps, status: hub, class: B}
+
+  uptime:
+    purpose: Know when the live site breaks
+    routes:
+      - {via: flow, tool: uptime-alert, status: hub, class: A}
+      - {via: muse, tool: scheduled-task-http-check, status: live, class: A}

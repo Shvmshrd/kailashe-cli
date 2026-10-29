@@ -1,0 +1,122 @@
+# Archetypes: default go-to-market flow per market type.
+# Kailashe picks one (or two) from the project scan, then overrides the defaults with market evidence.
+# Channel ids map to sections in references/channels.md. Flow ids map to references/tool-hubs.md section 7.
+version: 1
+
+archetypes:
+  - id: dev-tool
+    name: Developer tool or open source project
+    detect: [package manifest with a bin or exports, CLI or SDK or API, README-led repo, docs site]
+    audience: developers and technical founders
+    channels_ranked: [docs-and-readme, hacker-news, communities, social-dev, directories, newsletters-and-podcasts, integrations-and-awesome-lists, seo-comparisons]
+    content_mix: {bottom: 20, middle: 50, top: 15, proof: 15}
+    first_30_days: [seo-basics, docs-quality-pass, listing-kit, directories-batch-1, show-hn-draft, three-how-to-guides, github-readme-polish]
+    flows: [github-star-alerts, release-to-social, mentions-watch, gsc-weekly, uptime-alert]
+    kpis: [github_stars, installs, docs_visits, signups, referring_domains]
+    cautions:
+      - Developer communities punish marketing tone. Lead with the problem and the code.
+      - Docs quality is the best SEO. Fix docs before writing blog posts.
+
+  - id: b2b-saas
+    name: B2B software as a service
+    detect: [login and billing, team or workspace features, pricing page with tiers, integrations]
+    audience: teams, managers, operators
+    channels_ranked: [seo-bottom-funnel, directories-and-review-sites, communities, linkedin, email-and-outreach, partnerships, launch-platforms]
+    content_mix: {bottom: 40, middle: 35, top: 10, proof: 15}
+    first_30_days: [seo-basics, listing-kit, alternatives-pages, comparison-pages, review-site-profiles, welcome-sequence, three-case-notes]
+    flows: [lead-route, signup-welcome, payment-events, review-request, support-triage, gsc-weekly, mentions-watch]
+    kpis: [demo_requests, trials, activation_rate, qualified_visits, pipeline, referring_domains]
+    cautions:
+      - Cold outreach is class C per recipient. Keep batches small and specific.
+      - Claims about competitors need a link and a date.
+
+  - id: b2c-app
+    name: Consumer web or mobile app
+    detect: [consumer signup, mobile or PWA, social login, free tier, app store links]
+    audience: general consumers or a clear niche
+    channels_ranked: [short-video-and-social, communities, app-store-or-seo, directories, email, influencers-and-creators, referral-loops]
+    content_mix: {bottom: 15, middle: 35, top: 30, proof: 20}
+    first_30_days: [seo-basics, listing-kit, store-listing-pass, content-pillars, first-20-posts, community-research, referral-idea]
+    flows: [signup-welcome, review-request, mentions-watch, uptime-alert, content-to-social]
+    kpis: [installs_or_signups, day_7_retention, share_rate, reviews, cost_per_signup]
+    cautions:
+      - Retention beats installs. Report activation and day-7 retention next to signups.
+      - Respect platform rules on incentives for reviews and follows.
+
+  - id: ai-tool
+    name: AI-powered app or agent
+    detect: [model API calls, prompt files, chat or agent interface, agent or MCP integration]
+    audience: builders, creators, operators, early adopters
+    channels_ranked: [directories-ai, launch-platforms, communities, social-x-and-linkedin, seo-how-to-and-templates, newsletters-and-podcasts, integrations-and-mcp-listings]
+    content_mix: {bottom: 20, middle: 45, top: 15, proof: 20}
+    first_30_days: [seo-basics, listing-kit, directories-batch-1, directories-batch-2, demo-video, three-use-case-pages, show-hn-or-launch-draft, mcp-or-integration-listing]
+    flows: [signup-welcome, mentions-watch, content-to-social, gsc-weekly, uptime-alert, github-star-alerts]
+    kpis: [signups, activation, weekly_active_users, directory_listings_live, referring_domains, mentions]
+    cautions:
+      - The category is crowded. Specific use cases and real demos beat generic claims.
+      - State model limits and data handling plainly. Never overclaim accuracy.
+
+  - id: content-media
+    name: Newsletter, blog, media or community
+    detect: [editorial content, subscribe forms, archive pages, RSS]
+    audience: readers in a defined topic
+    channels_ranked: [seo-informational, newsletter-swaps-and-mentions, social, communities, search-and-discover-feeds, partnerships]
+    content_mix: {bottom: 5, middle: 40, top: 40, proof: 15}
+    first_30_days: [seo-basics, subscribe-flow, content-calendar-12-weeks, lead-magnet, three-pillar-pages, outreach-list]
+    flows: [newsletter-pipeline, content-to-social, gsc-weekly, mentions-watch]
+    kpis: [subscribers, open_and_click_rate, returning_readers, search_clicks, sponsor_interest]
+    cautions:
+      - Quality and originality are the whole game. Do not scale volume past what the owner can stand behind.
+      - Disclose sponsorships and affiliate links.
+
+  - id: ecommerce
+    name: Online store or marketplace
+    detect: [cart and checkout, product catalog, shipping and returns pages, store platform]
+    audience: shoppers in a niche
+    channels_ranked: [seo-product-and-category, email-lifecycle, social-and-short-video, marketplaces, creators-and-affiliates, paid-after-proof]
+    content_mix: {bottom: 45, middle: 30, top: 10, proof: 15}
+    first_30_days: [seo-basics, product-page-pass, category-pages, welcome-and-cart-sequences, review-collection, listing-kit, creator-shortlist]
+    flows: [abandoned-cart, review-request, payment-events, support-triage, gsc-weekly]
+    kpis: [conversion_rate, revenue_per_visit, email_revenue_share, repeat_rate, reviews]
+    cautions:
+      - Paid stays off until the product pages convert. Spend needs class C approval and a cap.
+      - Follow advertising and consumer-protection rules for claims and promotions.
+
+  - id: local-service
+    name: Local or travel service business
+    detect: [bookings, location pages, reviews matter, tours or appointments, a service area]
+    audience: nearby customers or visiting travelers
+    channels_ranked: [local-seo-and-maps-profile, reviews, social-and-visual, partnerships-and-referrals, email-and-chat, directories-and-travel-sites]
+    content_mix: {bottom: 40, middle: 30, top: 15, proof: 15}
+    first_30_days: [seo-basics, maps-profile-pass, location-pages, review-collection, photo-and-video-plan, partner-list, booking-flow-check]
+    flows: [local-review-request, support-triage, mentions-watch, uptime-alert]
+    kpis: [bookings, calls_or_messages, reviews_and_rating, map_views, repeat_or_referral_rate]
+    cautions:
+      - Reviews and photos carry the business. Never fake either.
+      - Keep name, address and phone details identical everywhere.
+
+  - id: digital-product
+    name: Templates, assets, courses or digital downloads
+    detect: [downloads, checkout for a product, licence or usage terms, preview galleries]
+    audience: creators and professionals who want a shortcut
+    channels_ranked: [seo-templates-and-how-to, marketplaces-and-directories, social-and-short-video, communities, email-and-lead-magnet, creators-and-affiliates]
+    content_mix: {bottom: 35, middle: 40, top: 10, proof: 15}
+    first_30_days: [seo-basics, listing-kit, free-sample, preview-pages, marketplace-listings, welcome-sequence, affiliate-offer]
+    flows: [signup-welcome, payment-events, review-request, newsletter-pipeline, gsc-weekly]
+    kpis: [sales, free_sample_downloads, email_signups, conversion_rate, refund_rate]
+    cautions:
+      - Give honest previews. Refunds and complaints hurt more than missed sales.
+      - Check licence terms before listing on marketplaces.
+
+  - id: free-utility
+    name: Free tool, calculator or converter
+    detect: [single-purpose page, no login, input and output, high search intent]
+    audience: people who search for a quick answer
+    channels_ranked: [seo-tool-pages, directories, communities, embeds-and-backlinks, social, email-capture]
+    content_mix: {bottom: 20, middle: 55, top: 15, proof: 10}
+    first_30_days: [seo-basics, tool-page-pass, explainer-pages, schema-and-speed-pass, directories-batch-1, embed-or-share-feature, email-capture]
+    flows: [uptime-alert, gsc-weekly, mentions-watch, content-to-social]
+    kpis: [organic_visits, tool_uses, share_or_embed_rate, email_signups, referring_domains]
+    cautions:
+      - Speed and accuracy are the product. Monitor uptime and wrong-result reports.
+      - Ads and signups must not block the tool.
